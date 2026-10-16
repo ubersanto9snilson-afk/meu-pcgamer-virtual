@@ -1,0 +1,25 @@
+name: Windows-PC-Virtual
+on: 
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Conectando ao Tailscale
+      run: |
+        Invoke-WebRequest -Uri https://tailscale.com -OutFile tailscale-setup.exe
+        Start-Process -FilePath .\tailscale-setup.exe -ArgumentList '/qn' -Wait
+        & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --accept-routes
+    - name: Configurando o Windows Virtual
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    - name: Mantendo o PC Ligado
+      run: |
+        $Loop = 1
+        Do {
+          Write-Host "PC Virtual rodando perfeitamente... Minuto: $Loop"
+          Start-Sleep -Seconds 60
+          $Loop++
+        } While ($Loop -le 360)
